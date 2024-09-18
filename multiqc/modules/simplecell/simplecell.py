@@ -5,7 +5,7 @@ from typing import Dict, Union, List
 
 from multiqc.base_module import BaseMultiqcModule
 from multiqc.plots.table_object import ColumnMeta
-from multiqc.plots import table
+from multiqc.plots import table, bargraph
 
 log = logging.getLogger(__name__)
 
@@ -37,20 +37,26 @@ class MultiqcModule(BaseMultiqcModule):
 
         headers = {
             "num_cells": {
-                "title": "Num cells",
+                "title": "Number of cells",
                 "description": "Estimated number of cells; Number of barcodes passing the total counts threshold",
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
-            "median_total_reads_per_cell": {
-                "title": "Median reads per cell",
-                "description": "Median sum of counts per cell",
+            "raw_reads_per_cell": {
+                "title": "Raw reads per cell",
+                "description": "Number of reads pre-QC / Number of cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell": {
+                "title": "Median genes detected per cell",
+                "description": "Median number of genes detected for the cells (including nuclear and mitochondrial genes)",
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
         }
         # Select metrics for general stats table
-        general_stats_metrics = ["num_cells", "median_total_reads_per_cell"]
+        general_stats_metrics = ["num_cells", "raw_reads_per_cell", "median_genes_detected_per_cell"]
         self.general_stats_data = {
             sample: {key: value for key, value in metrics.items() if key in general_stats_metrics}
             for sample, metrics in self.data_by_sample.items()
@@ -61,16 +67,116 @@ class MultiqcModule(BaseMultiqcModule):
         self.write_data_file(self.data_by_sample, "multiqc_simplecell")
         log.info(f"Found {len(self.data_by_sample)} reports")
 
-        # Select metrics for csgenetics section table
-        cs_stats_metrics = ["num_cells", "raw_reads_per_cell", "median_total_reads_per_cell"]
-        self.cs_stats_data = {
-            sample: {key: value for key, value in metrics.items() if key in cs_stats_metrics}
-            for sample, metrics in self.data_by_sample.items()
+        # Add plot/table sections
+        ## Define headers for read qc table
+        ## Only metrics with defined header will be included in table
+        read_qc_header = {
+            "reads_pre_qc": {
+                "title": "Number of reads pre-QC",
+                "description": "Number of reads in the input R1 fastq files (after merging if applicable).",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "valid_barcode_reads": {
+                "title": "Number of valid barcode-containing reads",
+                "description": "Number of reads containing a barcode exactly matching the barcode_list.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "valid_barcode_reads_perc": {
+                "title": "Percentage valid barcode-containing reads",
+                "description": "(Number of valid barcode-containing reads / Number of reads pre-QC) * 100.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "barcode_bases_q30_perc": {
+                "title": "Barcode bp >= Q30 percentage",
+                "description": "The percentage of the barcode bases with a Phred score >= 30.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "reads_post_trimming": {
+                "title": "Number of reads post-QC trimming",
+                "description": "Number of reads after polyX tail and polyA internal trimming.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "reads_post_trimming_perc": {
+                "title": "Percentage reads post-QC trimming",
+                "description": "(Number of reads after polyX tail and polyA internal trimming / Number of valid barcode-containing reads) * 100.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "mean_post_trim_read_length": {
+                "title": "Mean read length post-QC trimming",
+                "description": "Mean R1 read length post-QC trimming.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "rna_bases_q30_perc": {
+                "title": "R1 bp >= Q30 percentage; post-QC trimming",
+                "description": "The percentage of the R1 bases (post-QC trimming) with a Phred score >= 30.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
         }
-        single_header = {}
-        table_config = {"namespace": "", "id": "per-cell-metrics", "title": "Per-cell metrics"}
-        # Add cs table section
-        self.add_section(plot=table.plot(self.cs_stats_data, headers=single_header, pconfig=table_config))
+        table_config = {"namespace": "", "id": "read-qc", "title": "Read QC", "only_defined_headers": True}
+        # Add read QC section
+        self.add_section(
+            name="Read QC", plot=table.plot(self.data_by_sample, headers=read_qc_header, pconfig=table_config)
+        )
+
+        # Deduplication data
+        for sample, metrics in self.data_by_sample.items():
+            if "reads_before_deduplication" in metrics and "reads_after_deduplication" in metrics:
+                metrics["reads_lost_deduplication"] = (
+                    metrics["reads_before_deduplication"] - metrics["reads_after_deduplication"]
+                )
+        # Deduplication section headers
+        cats = {
+            "reads_after_deduplication": {
+                "name": "Reads after deduplication",
+                "description": "Number of high confidence (unique alignment: max mismatch <= 3bp) gene-annotated (with XT gene_id annotation) reads after deduplication.",
+                "color": "#8bbc21",
+            },
+            "reads_lost_deduplication": {
+                "name": "Reads lost during deduplication",
+                "description": "Reads before deduplication - reads after deduplication",
+                "color": "#f7a35c",
+            },
+        }
+        dedup_config = {"id": "<Read deduplication>", "title": "Read deduplication"}
+        self.add_section(name="Deduplication", plot=bargraph.plot(self.data_by_sample, cats, pconfig=dedup_config))
+
+        # Add cell metrics section
+        cell_metrics_header = {
+            "median_total_reads_per_cell": {
+                "title": "Median total counts per cell",
+                "description": ",Median sum of counts per cell.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell": {
+                "title": "Median genes detected per cell",
+                "description": "Median sum of counts per cell.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_nuclear_genes_detected_per_cell": {
+                "title": "Median nuclear (non-mitochondrial) genes detected per cell",
+                "description": "Median number of nuclear genes detected for each cell.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+        }
+        table_config = {"namespace": "", "id": "cell-metrics", "title": "Cell metrics", "only_defined_headers": True}
+        # Add read QC section
+        self.add_section(
+            name="Cell metrics", plot=table.plot(self.data_by_sample, headers=cell_metrics_header, pconfig=table_config)
+        )
+
+        # Add cell caller section
+        self.add_section(name="Cell_caller")
 
     def parse_file(self, f) -> Dict[str, Union[float, int]]:
         data = {}
