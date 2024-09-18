@@ -864,6 +864,10 @@ sexdeterrmine:
 sickle:
   contents_re: 'FastQ \w*\s?records kept: .*'
   num_lines: 2
+simplecell:
+  fn: "*.metrics.csv"
+  contents: "valid_barcode_reads"
+  num_lines: 3
 skewer:
   contents: "maximum error ratio allowed (-r):"
 slamdunk/summary:

@@ -497,6 +497,7 @@ module_order:
   - pangolin
   - nextclade
   - freyja
+  - simplecell
   # Pre-alignment QC
   - humid
   - kat
