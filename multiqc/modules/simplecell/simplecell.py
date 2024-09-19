@@ -1,11 +1,11 @@
 import logging
-from copy import deepcopy
 import csv
-from typing import Dict, Union, List
+from typing import Dict, Union
 
 from multiqc.base_module import BaseMultiqcModule
-from multiqc.plots.table_object import ColumnMeta
 from multiqc.plots import table, bargraph
+
+from .cell_caller import parse_cellcaller_json
 
 log = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ class MultiqcModule(BaseMultiqcModule):
         )
 
         # Find all files for simplecell
-        self.data_by_sample: Dict[str, Dict[str, Union[float, int]]] = dict()
-        for f in self.find_log_files("simplecell"):
+        self.data_by_sample: Dict[str, int] = dict()
+        for f in self.find_log_files("simplecell/metrics"):
             self.add_data_source(f)
             # TODO: log simplecell version
             s_name = f["s_name"]
@@ -64,7 +64,7 @@ class MultiqcModule(BaseMultiqcModule):
         # Add data to general stats table
         self.general_stats_addcols(self.general_stats_data, headers)
         # Write data to multiqc out file
-        self.write_data_file(self.data_by_sample, "multiqc_simplecell")
+        self.write_data_file(self.data_by_sample, "simplecell_metrics")
         log.info(f"Found {len(self.data_by_sample)} reports")
 
         # Add plot/table sections
@@ -175,8 +175,7 @@ class MultiqcModule(BaseMultiqcModule):
             name="Cell metrics", plot=table.plot(self.data_by_sample, headers=cell_metrics_header, pconfig=table_config)
         )
 
-        # Add cell caller section
-        self.add_section(name="Cell_caller")
+        parse_cellcaller_json(self)
 
     def parse_file(self, f) -> Dict[str, Union[float, int]]:
         data = {}
