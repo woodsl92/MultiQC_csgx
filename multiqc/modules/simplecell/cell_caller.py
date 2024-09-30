@@ -1,4 +1,4 @@
-"""Parse output from simplecell cellcaller"""
+"""Parse output from simplecell cellcaller single species"""
 
 import json
 import logging
@@ -35,15 +35,23 @@ def parse_cellcaller_json(module: BaseMultiqcModule) -> int:
     module.write_data_file(data_by_sample, "simplecell_cellcaller")
     log.info(f"Found {len(data_by_sample)} reports")
 
+    # Get max value of y to plot default threshold line
+    max_y = max(noise_cells_by_sample[f"{s_name}_noise"].values())
+    max_cell = max(noise_cells_by_sample[f"{s_name}_cell"].values())
+    if max_cell > max_y:
+        max_y = max_cell
+
     line_config = {
         "id": "cellcaller",
         "title": "Cellcaller",
+        "anchor": "cellcaller",
         "xlab": "log10(total counts+1)",
         "ylab": "Density",
+        "showlegend": True,
         "extra_series": [
             {
-                "name": "x=1",
-                "pairs": [[2, 0], [2, 3]],
+                "name": "Default threshold",
+                "pairs": [[2, 0], [2, max_y]],
                 "dash": "dash",
                 "width": 1,
                 "color": "#000000",

@@ -869,9 +869,11 @@ simplecell/metrics:
   contents: "valid_barcode_reads"
   num_lines: 3
 simplecell/cellcaller:
-  fn: "*cellcaller_data.json"
-  contents: "noise"
+  exclude_fn: "*mixed_cellcaller_data.json"
+  contents: '"noise": {'
   num_lines: 2
+simplecell/cellcaller_mixed_species:
+  fn: "*mixed_cellcaller_data.json"
 skewer:
   contents: "maximum error ratio allowed (-r):"
 slamdunk/summary:

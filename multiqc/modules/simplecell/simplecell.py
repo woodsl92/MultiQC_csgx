@@ -6,6 +6,7 @@ from multiqc.base_module import BaseMultiqcModule
 from multiqc.plots import table, bargraph
 
 from .cell_caller import parse_cellcaller_json
+from .cell_caller_mixed_species import parse_cellcaller_mixed_json
 
 log = logging.getLogger(__name__)
 
@@ -176,6 +177,7 @@ class MultiqcModule(BaseMultiqcModule):
         )
 
         parse_cellcaller_json(self)
+        parse_cellcaller_mixed_json(self)
 
     def parse_file(self, f) -> Dict[str, Union[float, int]]:
         data = {}
