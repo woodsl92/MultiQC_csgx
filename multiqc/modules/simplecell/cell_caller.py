@@ -35,7 +35,21 @@ def parse_cellcaller_json(module: BaseMultiqcModule) -> int:
     module.write_data_file(data_by_sample, "simplecell_cellcaller")
     log.info(f"Found {len(data_by_sample)} reports")
 
-    line_config = {"id": "cellcaller", "title": "Cellcaller", "xlab": "log10(total counts+1)", "ylab": "Density"}
+    line_config = {
+        "id": "cellcaller",
+        "title": "Cellcaller",
+        "xlab": "log10(total counts+1)",
+        "ylab": "Density",
+        "extra_series": [
+            {
+                "name": "x=1",
+                "pairs": [[2, 0], [2, 3]],
+                "dash": "dash",
+                "width": 1,
+                "color": "#000000",
+            }
+        ],
+    }
     module.add_section(
         name="Cellcaller",
         anchor="cellcaller",
