@@ -43,9 +43,45 @@ class MultiqcModule(BaseMultiqcModule):
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
+            "num_cells_total": {
+                "title": "Number of cells total",
+                "description": "Estimated number of Hsap and Mmus cells combined: Number of barcodes classified as either Hsap or Mmus single cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "num_cells_Hsap": {
+                "title": "Number of Hsap cells",
+                "description": "Estimated number of Hsap cells: Number of barcodes with counts above the Hsap threshold but below the Mmus threshold",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "num_cells_Mmus": {
+                "title": "Number of Mmus cells",
+                "description": "Estimated number of Mmus cells: Number of barcodes with counts above the Mmus threshold but below the Hsap threshold",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
             "raw_reads_per_cell": {
                 "title": "Raw reads per cell",
                 "description": "Number of reads pre-QC / Number of cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "raw_reads_per_cell_total": {
+                "title": "Raw reads per cell (Hsap and Mmus)",
+                "description": "Number of reads pre-QC / Number of cells (Hsap and Mmus)",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "raw_reads_per_cell_Hsap": {
+                "title": "Raw reads per Hsap cell",
+                "description": "Number of reads pre-QC / Number of Hsap cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "raw_reads_per_cell_Mmus": {
+                "title": "Raw reads per Mmus cell",
+                "description": "Number of reads pre-QC / Number of Mmus cells",
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
@@ -55,9 +91,40 @@ class MultiqcModule(BaseMultiqcModule):
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
+            "median_genes_detected_per_cell_total": {
+                "title": "Median genes detected per cell (Hsap and Mmus)",
+                "description": "Median number of genes detected per cell (including nuclear and mitochondrial genes; including Hsap and Mmus cells).  Mmus gene detections are not counted for Hsap cells and vice versa for Mmus cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell_Hsap": {
+                "title": "Median genes detected per Hsap cell",
+                "description": "Median number of genes detected per Hsap cell (including nuclear and mitochondrial genes). Mmus gene detections are not included",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell_Mmus": {
+                "title": "Median genes detected per Mmus cell",
+                "description": "Median number of genes detected per Mmus cell (including nuclear and mitochondrial genes). Hsap gene detections are not included",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
         }
         # Select metrics for general stats table
-        general_stats_metrics = ["num_cells", "raw_reads_per_cell", "median_genes_detected_per_cell"]
+        general_stats_metrics = [
+            "num_cells",
+            "num_cells_total",
+            "num_cells_Hsap",
+            "num_cells_Mmus",
+            "raw_reads_per_cell",
+            "raw_reads_per_cell_total",
+            "raw_reads_per_cell_Hsap",
+            "raw_reads_per_cell_Mmus",
+            "median_genes_detected_per_cell",
+            "median_genes_detected_per_cell_total",
+            "median_genes_detected_per_cell_Hsap",
+            "median_genes_detected_per_cell_Mmus",
+        ]
         self.general_stats_data = {
             sample: {key: value for key, value in metrics.items() if key in general_stats_metrics}
             for sample, metrics in self.data_by_sample.items()
@@ -146,14 +213,32 @@ class MultiqcModule(BaseMultiqcModule):
                 "color": "#f7a35c",
             },
         }
-        dedup_config = {"id": "<Read deduplication>", "title": "Read deduplication"}
+        dedup_config = {"id": "read_deduplication", "title": "Read deduplication"}
         self.add_section(name="Deduplication", plot=bargraph.plot(self.data_by_sample, cats, pconfig=dedup_config))
 
         # Add cell metrics section
         cell_metrics_header = {
             "median_total_reads_per_cell": {
                 "title": "Median total counts per cell",
-                "description": ",Median sum of counts per cell.",
+                "description": "Median sum of counts per cell.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_total_reads_per_cell_total": {
+                "title": "Median total counts per cell (Hsap and Mmus)",
+                "description": "Median sum of counts per cell (Hsap and Mmus cells). Only Hsap gene-derived counts are counted for Hsap cells and vice versa for Mmus cells.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_total_reads_per_cell_Hsap": {
+                "title": "Median total counts per Hsap cell",
+                "description": "Median sum of counts per Hsap cell. Mmus gene counts are not included",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_total_reads_per_cell_Mmus": {
+                "title": "Median total counts per cell",
+                "description": "Median sum of counts per Mmus cell. Hsap gene counts are not included.",
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
@@ -163,9 +248,45 @@ class MultiqcModule(BaseMultiqcModule):
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
+            "median_genes_detected_per_cell_total": {
+                "title": "Median genes detected per cell (Hsap and Mmus)",
+                "description": "Median number of genes detected per cell (including nuclear and mitochondrial genes; including Hsap and Mmus cells).  Mmus gene detections are not counted for Hsap cells and vice versa for Mmus cells",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell_Hsap": {
+                "title": "Median genes detected per Hsap cell",
+                "description": "Median number of genes detected per Hsap cell (including nuclear and mitochondrial genes). Mmus gene detections are not included.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_genes_detected_per_cell_Mmus": {
+                "title": "Median genes detected per Mmus cell",
+                "description": "Median number of genes detected per Mmus cell (including nuclear and mitochondrial genes). Hsap gene detections are not included.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
             "median_nuclear_genes_detected_per_cell": {
                 "title": "Median nuclear (non-mitochondrial) genes detected per cell",
                 "description": "Median number of nuclear genes detected for each cell.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_nuclear_genes_detected_per_cell_total": {
+                "title": "Median nuclear (non-mitochondrial) genes detected per cell (Hsap and Mmus)",
+                "description": "Median number of nuclear genes detected per cell (Hsap and Mmus cells). Mmus gene detections are not counted for Hsap cells and vice versa for Mmus cells.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_nuclear_genes_detected_per_cell_Hsap": {
+                "title": "Median nuclear (non-mitochondrial) genes detected per Hsap cell",
+                "description": "Median number of nuclear genes detected per Hsap cell. Mmus gene detections are not included.",
+                "scale": "Greens",
+                "format": "{:,.0f}",
+            },
+            "median_nuclear_genes_detected_per_cell_Mmus": {
+                "title": "Median nuclear (non-mitochondrial) genes detected per Mmus cell",
+                "description": "Median number of nuclear genes detected per Mmus cell. Hsap gene detections are not included.",
                 "scale": "Greens",
                 "format": "{:,.0f}",
             },
